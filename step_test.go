@@ -4,6 +4,121 @@ import (
 	"testing"
 )
 
+type runeWriter struct {
+	runes []rune
+}
+
+func (rw *runeWriter) AtBoundary(b int) error {
+	return nil
+}
+
+func (rw *runeWriter) WriteRune(r rune) error {
+	rw.runes = append(rw.runes, r)
+	return nil
+}
+
+func (rw *runeWriter) String() string {
+	return string(rw.runes)
+}
+
+func joinRunes(runes [][]rune) []rune {
+	var result []rune
+	for _, r := range runes {
+		result = append(result, r...)
+	}
+	return result
+}
+
+// Test official Grapheme Cluster Unicode test cases for grapheme clusters using
+// the [Step] function.
+func TestStepWriterGrapheme(t *testing.T) {
+	for testNum, testCase := range graphemeBreakTestCases {
+		// if testNum != 35 {
+		// 	continue
+		// }
+		/*t.Logf(`Test case %d %q: Expecting %x, getting %x, code points %x"`,
+		testNum,
+		strings.TrimSpace(testCase.original),
+		testCase.expected,
+		decomposed(testCase.original),
+		[]rune(testCase.original))*/
+		b := []byte(testCase.original)
+		state := -1
+		var (
+			index int
+			c     []byte
+			wr    = &runeWriter{}
+		)
+	GraphemeLoop:
+		for len(b) > 0 {
+			c, b, _, state, _ = StepBuffer(b, state, wr)
+			if index >= len(testCase.expected) {
+				t.Errorf(`Test case %d %q failed: More grapheme clusters returned than expected %d`,
+					testNum,
+					testCase.original,
+					len(testCase.expected))
+				break
+			}
+
+			cluster := []rune(string(c))
+			if len(cluster) != len(testCase.expected[index]) {
+				t.Errorf(`Test case %d %q failed: Grapheme cluster at index %d has %d codepoints %x, %d expected %x`,
+					testNum,
+					testCase.original,
+					index,
+					len(cluster),
+					cluster,
+					len(testCase.expected[index]),
+					testCase.expected[index])
+				break
+			}
+			for i, r := range cluster {
+				if r != testCase.expected[index][i] {
+					t.Errorf(`Test case %d %q failed: Grapheme cluster at index %d is %x, expected %x`,
+						testNum,
+						testCase.original,
+						index,
+						cluster,
+						testCase.expected[index])
+					break GraphemeLoop
+				}
+			}
+
+			index++
+		}
+		str := wr.String()
+		expectedRunes := joinRunes(testCase.expected)
+		expectedStr := string(expectedRunes)
+		if str != expectedStr {
+			t.Errorf(`Test case %d %q failed: Writer output is %q, expected %q`,
+				testNum,
+				testCase.original,
+				str,
+				testCase.original)
+		}
+		if index < len(testCase.expected) {
+			t.Errorf(`Test case %d %q failed: Fewer grapheme clusters returned (%d) than expected (%d)`,
+				testNum,
+				testCase.original,
+				index,
+				len(testCase.expected))
+		}
+	}
+	cluster, rest, boundaries, newState := Step([]byte{}, -1)
+	if len(cluster) > 0 {
+		t.Errorf(`Expected cluster to be empty byte slice, got %q`, cluster)
+	}
+	if len(rest) > 0 {
+		t.Errorf(`Expected rest to be empty byte slice, got %q`, rest)
+	}
+	if boundaries != 0 {
+		t.Errorf(`Expected width to be 0, got %d`, boundaries)
+	}
+	if newState != 0 {
+		t.Errorf(`Expected newState to be 0, got %d`, newState)
+	}
+}
+
 // Test official Grapheme Cluster Unicode test cases for grapheme clusters using
 // the [Step] function.
 func TestStepBytesGrapheme(t *testing.T) {

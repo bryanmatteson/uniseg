@@ -43,7 +43,6 @@ const (
 
 type Stepper interface {
 	WriteRune(r rune) error
-	AtBoundary(b int) error
 }
 
 // Step returns the first grapheme cluster (user-perceived character) found in
@@ -265,7 +264,6 @@ func StepBuffer(b []byte, state int, wr Stepper) (cluster, rest []byte, boundari
 			prop = state >> shiftPropState
 		}
 		boundary := LineMustBreak | (1 << shiftWord) | (1 << shiftSentence) | (runeWidth(r, prop) << ShiftWidth)
-		err = wr.AtBoundary(boundary)
 		return b, nil, boundary, grAny | (wbAny << shiftWordState) | (sbAny << shiftSentenceState) | (lbAny << shiftLineState) | (prop << shiftPropState), err
 	}
 
@@ -310,7 +308,6 @@ func StepBuffer(b []byte, state int, wr Stepper) (cluster, rest []byte, boundari
 			if sentenceBoundary {
 				boundary |= 1 << shiftSentence
 			}
-			err = wr.AtBoundary(boundary)
 			return b[:length], b[length:], boundary, graphemeState | (wordState << shiftWordState) | (sentenceState << shiftSentenceState) | (lineState << shiftLineState) | (prop << shiftPropState), err
 		}
 
@@ -330,7 +327,6 @@ func StepBuffer(b []byte, state int, wr Stepper) (cluster, rest []byte, boundari
 		length += l
 		if len(b) <= length {
 			boundary := LineMustBreak | (1 << shiftWord) | (1 << shiftSentence) | (width << ShiftWidth)
-			err = wr.AtBoundary(boundary)
 			return b, nil, boundary, grAny | (wbAny << shiftWordState) | (sbAny << shiftSentenceState) | (lbAny << shiftLineState) | (prop << shiftPropState), err
 		}
 	}

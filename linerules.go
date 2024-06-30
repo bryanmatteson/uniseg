@@ -447,7 +447,13 @@ func lbTransitions(state, prop int) (newState, lineBreak, rule int) {
 // code point is needed to determine the new state, the byte slice or the string
 // starting after rune "r" can be used (whichever is not nil or empty) for
 // further lookups.
+
 func transitionLineBreakState(state int, r rune, b []byte, str string) (newState int, lineBreak int) {
+	return transitionLineBreakStateRunes(state, r, b, str, nil)
+}
+
+func transitionLineBreakStateRunes(state int, r rune, b []byte, str string, runes []rune) (newState int, lineBreak int) {
+
 	// Determine the property of the next character.
 	nextProperty, generalCategory := propertyLineBreak(r)
 
@@ -566,7 +572,8 @@ func transitionLineBreakState(state int, r rune, b []byte, str string) (newState
 		var r rune
 		if b != nil { // Byte slice version.
 			r, _ = utf8.DecodeRune(b)
-		} else { // String version.
+		} else if runes != nil { // String version.
+		} else {
 			r, _ = utf8.DecodeRuneInString(str)
 		}
 		if r != utf8.RuneError {

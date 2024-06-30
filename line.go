@@ -80,6 +80,40 @@ func FirstLineSegment(b []byte, state int) (segment, rest []byte, mustBreak bool
 	}
 }
 
+func FirstLineSegmentInRunes(b []rune, state int) (segment, rest []rune, mustBreak bool, newState int) {
+	// An empty byte slice returns nothing.
+	if len(b) == 0 {
+		return
+	}
+
+	// Extract the first rune.
+	r, length := b[0], 1
+	if len(b) <= length { // If we're already past the end, there is nothing else to parse.
+		return b, nil, true, lbAny // LB3.
+	}
+
+	// If we don't know the state, determine it now.
+	if state < 0 {
+		state, _ = transitionLineBreakStateRunes(state, r, nil, "", b[length:])
+	}
+
+	// Transition until we find a boundary.
+	var boundary int
+	for {
+		r, l := b[length], 1
+		state, boundary = transitionLineBreakStateRunes(state, r, nil, "", b[length+l:])
+
+		if boundary != LineDontBreak {
+			return b[:length], b[length:], boundary == LineMustBreak, state
+		}
+
+		length += l
+		if len(b) <= length {
+			return b, nil, true, lbAny // LB3
+		}
+	}
+}
+
 // FirstLineSegmentInString is like [FirstLineSegment] but its input and outputs
 // are strings.
 func FirstLineSegmentInString(str string, state int) (segment, rest string, mustBreak bool, newState int) {

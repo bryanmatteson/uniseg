@@ -2,6 +2,7 @@ package uniseg
 
 import (
 	"testing"
+	"unicode/utf8"
 )
 
 type runeWriter struct {
@@ -12,9 +13,9 @@ func (rw *runeWriter) AtBoundary(b int) error {
 	return nil
 }
 
-func (rw *runeWriter) WriteRune(r rune) error {
+func (rw *runeWriter) WriteRune(r rune) (int, error) {
 	rw.runes = append(rw.runes, r)
-	return nil
+	return utf8.RuneLen(r), nil
 }
 
 func (rw *runeWriter) String() string {

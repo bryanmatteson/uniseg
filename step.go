@@ -42,7 +42,7 @@ const (
 )
 
 type Stepper interface {
-	WriteRune(r rune) error
+	WriteRune(r rune) (int, error)
 }
 
 // Step returns the first grapheme cluster (user-perceived character) found in
@@ -253,7 +253,7 @@ func StepBuffer(b []byte, state int, wr Stepper) (cluster, rest []byte, boundari
 
 	// Extract the first rune.
 	r, length := utf8.DecodeRune(b)
-	if err = wr.WriteRune(r); err != nil {
+	if _, err = wr.WriteRune(r); err != nil {
 		return
 	}
 	if len(b) <= length { // If we're already past the end, there is nothing else to parse.
@@ -321,7 +321,7 @@ func StepBuffer(b []byte, state int, wr Stepper) (cluster, rest []byte, boundari
 			width += runeWidth(r, prop)
 		}
 
-		if err = wr.WriteRune(r); err != nil {
+		if _, err = wr.WriteRune(r); err != nil {
 			return
 		}
 		length += l
